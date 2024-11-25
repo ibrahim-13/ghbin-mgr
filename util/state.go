@@ -9,9 +9,16 @@ import (
 	"path/filepath"
 )
 
+type BinaryState struct {
+	Id        string `json:"id,omitempty"`
+	Version   string `json:"version,omitempty"`
+	UpdatedAt string `json:"updated_at,omitempty"`
+}
+
 type InstallState struct {
-	filePath string `json:"-"`
-	Version  int    `json:"version,omitempty"`
+	filePath string        `json:"-"`
+	Version  int           `json:"version,omitempty"`
+	Binaries []BinaryState `json:"binaries,omitempty"`
 }
 
 const (
@@ -48,7 +55,7 @@ func newInstallState(installDir string) *InstallState {
 	return &state
 }
 
-func (s *InstallState) Save() error {
+func (s *InstallState) save() error {
 	stat, err := os.Stat(s.filePath)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -66,4 +73,49 @@ func (s *InstallState) Save() error {
 		return fmt.Errorf("unable to write state file: %s: %w", s.filePath, err)
 	}
 	return nil
+}
+
+func (s *InstallState) exists(id string) bool {
+	for i := range s.Binaries {
+		if s.Binaries[i].Id == id {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *InstallState) Add(state BinaryState) error {
+	if s.exists(state.Id) {
+		s.Update(state)
+		return nil
+	}
+	s.Binaries = append(s.Binaries, state)
+	return s.save()
+}
+
+func (s *InstallState) Update(state BinaryState) error {
+	var hasUpdated bool
+	for i := range s.Binaries {
+		if s.Binaries[i].Id == state.Id {
+			s.Binaries[i] = state
+			hasUpdated = true
+			break
+		}
+	}
+	if !hasUpdated {
+		return errors.New("package does not exist int the state: " + state.Id)
+	}
+	return s.save()
+}
+
+func (s *InstallState) Remove(id string) error {
+	index := 0
+	for i := range s.Binaries {
+		if s.Binaries[i].Id != id {
+			s.Binaries[index] = s.Binaries[i]
+			index++
+		}
+	}
+	s.Binaries = s.Binaries[:index]
+	return s.save()
 }
