@@ -2,10 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"os"
-
 	"gbm/util"
+	"os"
 )
 
 func main() {
@@ -23,9 +21,4 @@ func main() {
 	appCtx := util.NewAppCtx(showUi)
 	defer appCtx.Cleanup()
 	appCtx.Log.Println("gg")
-	fmt.Println(appCtx.Conf.InstallDir)
-	err := appCtx.State.Save()
-	if err != nil {
-		panic(err)
-	}
 }

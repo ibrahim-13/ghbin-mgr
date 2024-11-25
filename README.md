@@ -4,8 +4,8 @@ Manage installation, update and removal of binaries from Github releases.
 
 ## To-do
  - [ ] Core
-   - [ ] get release info from Github API
-   - [ ] get release info from Github CLI
+   - [X] get release info from Github API
+   - [X] get release info from Github CLI
    - [ ] package state
    - [ ] download/install
    - [ ] delete/uninstall
