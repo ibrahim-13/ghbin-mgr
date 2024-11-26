@@ -75,7 +75,7 @@ func (s *InstallState) save() error {
 	return nil
 }
 
-func (s *InstallState) exists(id string) bool {
+func (s *InstallState) Exists(id string) bool {
 	for i := range s.Binaries {
 		if s.Binaries[i].Id == id {
 			return true
@@ -84,8 +84,17 @@ func (s *InstallState) exists(id string) bool {
 	return false
 }
 
+func (s *InstallState) FindById(id string) *BinaryState {
+	for i := range s.Binaries {
+		if s.Binaries[i].Id == id {
+			return &s.Binaries[i]
+		}
+	}
+	return nil
+}
+
 func (s *InstallState) Add(state BinaryState) error {
-	if s.exists(state.Id) {
+	if s.Exists(state.Id) {
 		s.Update(state)
 		return nil
 	}

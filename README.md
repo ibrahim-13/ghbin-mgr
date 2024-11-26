@@ -7,7 +7,7 @@ Manage installation, update and removal of binaries from Github releases.
    - [X] get release info from Github API
    - [X] get release info from Github CLI
    - [X] package state
-   - [ ] package manager
+   - [X] package manager
    - [ ] download/install
    - [ ] delete/uninstall
    - [ ] update
