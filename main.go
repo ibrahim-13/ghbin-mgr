@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"gbm/core/manager"
+	"gbm/core/packages"
 	"gbm/util"
 	"os"
 )
@@ -20,5 +22,11 @@ func main() {
 
 	appCtx := util.NewAppCtx(showUi)
 	defer appCtx.Cleanup()
+	mgr := manager.NewManager(appCtx)
+	packages.RegisterPackages(mgr)
+	err := mgr.Install("jesseduffield/lazygit")
+	if err != nil {
+		panic(err)
+	}
 	appCtx.Log.Println("gg")
 }

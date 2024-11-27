@@ -17,3 +17,4 @@ Manage installation, update and removal of binaries from Github releases.
    - [ ] search/query
    - [ ] update
  - [ ] Import repository list
+ - [ ] Checksum validation

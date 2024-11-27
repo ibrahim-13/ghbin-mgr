@@ -33,7 +33,7 @@ func checkIfGhCliInstalled() bool {
 }
 
 func NewRelease() GhRelease {
-	if !checkIfGhCliInstalled() {
+	if checkIfGhCliInstalled() {
 		return NewGhCli(__gh_cli_command)
 	}
 	return NewGhApi(__gh_api_endpoint)

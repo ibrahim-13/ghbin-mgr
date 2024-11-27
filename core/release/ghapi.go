@@ -25,11 +25,11 @@ func NewGhApi(endpoint string) *GhApi {
 func (ctx *GhApi) GetRelease(user, repo string) (*GhReleaseInfo, error) {
 	url := fmt.Sprintf("%s/repos/%s/%s/releases/latest", ctx.endpoint, user, repo)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 	res, err := ctx.client.Do(req)
 	if err != nil {
 		return nil, err

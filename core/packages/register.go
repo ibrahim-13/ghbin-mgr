@@ -1,7 +1,14 @@
 package packages
 
-import "gbm/core/manager"
+import (
+	"gbm/core/manager"
+	"net/http"
+	"time"
+)
 
 func RegisterPackages(m *manager.Manager) {
-	m.Register(NewLazyGit())
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	m.Register(NewLazyGit(client))
 }

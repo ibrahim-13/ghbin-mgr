@@ -9,9 +9,9 @@ type PackageDescription interface {
 	GetId() string
 	GetUser() string
 	GetRepository() string
-	OnInstall() error
-	OnUninstall() error
-	OnUpdate() error
+	OnInstall(conf *util.Configuration, info *release.GhReleaseInfo) error
+	OnUninstall(conf *util.Configuration) error
+	OnUpdate(conf *util.Configuration, info *release.GhReleaseInfo) error
 }
 
 type Package struct {
@@ -34,8 +34,8 @@ func (p *Package) HasUpdate(info *release.GhReleaseInfo) bool {
 		p.State.UpdatedAt != newBinInfo.UpdatedAt
 }
 
-func NewPackage(desc PackageDescription, state *util.BinaryState) *Package {
-	return &Package{
+func NewPackage(desc PackageDescription, state *util.BinaryState) Package {
+	return Package{
 		Description: desc,
 		State:       state,
 	}
