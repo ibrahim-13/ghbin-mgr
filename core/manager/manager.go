@@ -12,14 +12,14 @@ import (
 type Manager struct {
 	ctx              *util.AppCtx
 	Packages         []Package
-	releaseInfoCache map[string]*release.GhReleaseInfo
+	releaseInfoCache map[string]*release.GhReleaseInfoResponse
 	Release          release.GhRelease
 }
 
-func (m *Manager) DownloadAndExtract(conf *util.Configuration, info *release.GhReleaseInfo) error {
+func (m *Manager) DownloadAndExtract(conf *util.Configuration, info *release.GhReleaseInfoResponse) error {
 	var downloadUrl string
 	for i := range info.Assets {
-		if containsAllMatches(info.Assets[i].Name, "darwin", "arm64", "tar.gz") {
+		if util.ContainsAllMatches(info.Assets[i].Name, "darwin", "arm64", "tar.gz") {
 			downloadUrl = info.Assets[i].BrowserDownloadURL
 			break
 		}
@@ -52,6 +52,6 @@ func NewManager(ctx *util.AppCtx) *Manager {
 	return &Manager{
 		ctx:              ctx,
 		Release:          release.NewRelease(),
-		releaseInfoCache: make(map[string]*release.GhReleaseInfo),
+		releaseInfoCache: make(map[string]*release.GhReleaseInfoResponse),
 	}
 }

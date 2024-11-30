@@ -2,9 +2,12 @@ package release
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"gbm/util"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -22,7 +25,7 @@ func NewGhApi(endpoint string) *GhApi {
 	}
 }
 
-func (ctx *GhApi) GetRelease(user, repo string) (*GhReleaseInfo, error) {
+func (ctx *GhApi) GetRelease(user, repo string, pattern ...string) (*GhReleaseInfo, error) {
 	url := fmt.Sprintf("%s/repos/%s/%s/releases/latest", ctx.endpoint, user, repo)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -39,12 +42,17 @@ func (ctx *GhApi) GetRelease(user, repo string) (*GhReleaseInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	var info GhReleaseInfo
+	var info GhReleaseInfoResponse
 	err = json.Unmarshal(output, &info)
 	if err != nil {
 		return nil, err
 	}
-	return &info, nil
+	for i := range info.Assets {
+		if util.ContainsAllMatches(info.Assets[i].Name, pattern...) {
+			return InfoFromResponse(&info, &info.Assets[i]), nil
+		}
+	}
+	return nil, errors.New("asset not found for pattern: " + strings.Join(pattern, ","))
 }
 
 func (ctx *GhApi) GetName() string {
