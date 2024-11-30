@@ -1,4 +1,4 @@
-package packages
+package manager
 
 import (
 	"archive/tar"

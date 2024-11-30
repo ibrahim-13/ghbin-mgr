@@ -16,11 +16,9 @@ type Configuration struct {
 }
 
 const (
-	__config_install_dir  string = "ghbin"
-	__config_log_filename string = "ghbin-mgr.log"
-	OsWindows             Os     = 1
-	OsLinux               Os     = 2
-	OsMac                 Os     = 2
+	OsWindows Os = 1
+	OsLinux   Os = 2
+	OsMac     Os = 3
 )
 
 func ensureDirExistsOrPanic(dir string) {
@@ -39,14 +37,9 @@ func ensureDirExistsOrPanic(dir string) {
 	}
 }
 
-func newConfiguration() *Configuration {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		panic(fmt.Errorf("unable to get home directory: %w", err))
-	}
-	installDirPath := filepath.Join(home, __config_install_dir)
-	tempDirPath := filepath.Join(installDirPath, "tmp")
-	ensureDirExistsOrPanic(installDirPath)
+func NewConfiguration(installDir string) *Configuration {
+	tempDirPath := filepath.Join(installDir, "tmp")
+	ensureDirExistsOrPanic(installDir)
 	ensureDirExistsOrPanic(tempDirPath)
 	osTypeStr := runtime.GOOS
 	var osType Os
@@ -61,7 +54,7 @@ func newConfiguration() *Configuration {
 		panic("unknown os type: " + osTypeStr)
 	}
 	return &Configuration{
-		InstallDir: installDirPath,
+		InstallDir: installDir,
 		TmpDir:     tempDirPath,
 		OsType:     osType,
 	}

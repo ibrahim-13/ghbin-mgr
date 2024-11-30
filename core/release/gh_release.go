@@ -23,7 +23,6 @@ type GhRelease interface {
 
 const (
 	__gh_api_endpoint string = "https://api.github.com"
-	__gh_cli_command  string = "gh"
 )
 
 func checkIfGhCliInstalled() bool {
