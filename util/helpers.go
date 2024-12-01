@@ -1,6 +1,9 @@
 package util
 
-import "strings"
+import (
+	"runtime"
+	"strings"
+)
 
 func ContainsAllMatches(str string, match ...string) bool {
 	s := strings.ToLower(str)
@@ -11,4 +14,19 @@ func ContainsAllMatches(str string, match ...string) bool {
 		}
 	}
 	return len(match) == matchCount
+}
+
+func ParsePatternsFromString(pattern string) []string {
+	var formatted_patterns []string
+	for _, v := range strings.Split(pattern, ",") {
+		_v := strings.ToLower(v)
+		if _v == "__os__" {
+			formatted_patterns = append(formatted_patterns, runtime.GOOS)
+		} else if _v == "__arch__" {
+			formatted_patterns = append(formatted_patterns, runtime.GOARCH)
+		} else {
+			formatted_patterns = append(formatted_patterns, v)
+		}
+	}
+	return formatted_patterns
 }

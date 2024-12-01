@@ -6,6 +6,7 @@ import (
 
 type GhRelease interface {
 	GetRelease(user, repo string, pattern ...string) (*GhReleaseInfo, error)
+	GetReleaseResponse(user, repo string) (*GhReleaseInfoResponse, error)
 	GetName() string
 }
 
