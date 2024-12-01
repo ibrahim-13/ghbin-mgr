@@ -1,43 +1,37 @@
 package manager
 
 import (
-	"errors"
-	"gbm/core/release"
-	"gbm/util"
 	"net/http"
 	"os"
 	"path/filepath"
 )
 
-type Manager struct {
-	ctx              *util.AppCtx
-	Packages         []Package
-	releaseInfoCache map[string]*release.GhReleaseInfoResponse
-	Release          release.GhRelease
-}
+type ArchiveType string
 
-func (m *Manager) DownloadAndExtract(conf *util.Configuration, info *release.GhReleaseInfoResponse) error {
-	var downloadUrl string
-	for i := range info.Assets {
-		if util.ContainsAllMatches(info.Assets[i].Name, "darwin", "arm64", "tar.gz") {
-			downloadUrl = info.Assets[i].BrowserDownloadURL
-			break
-		}
-	}
-	if downloadUrl == "" {
-		return errors.New("no asset found for os: macos")
-	}
-	archivefile := filepath.Join(conf.TmpDir, "lazygit.tar.gz")
+const (
+	ArchiveGzip ArchiveType = "gzip"
+	ArchiveZip  ArchiveType = "zip"
+)
+
+func DownloadAndExtract(downloadUrl, location string, aType ArchiveType, pattern ...string) error {
+	parent := filepath.Dir(location)
+	basename := filepath.Base(location)
+	archivefile := filepath.Join(parent, basename)
 	err := downloadFile(downloadUrl, archivefile, http.DefaultClient)
 	if err != nil {
 		return err
 	}
-	binfile := filepath.Join(conf.InstallDir, "lazygit")
-	err = extractFileTarGz(archivefile, binfile, "lazygit")
+
+	switch aType {
+	case ArchiveGzip:
+		err = extractFileTarGz(archivefile, location, pattern...)
+	case ArchiveZip:
+		err = extractFileZip(archivefile, location, pattern...)
+	}
 	if err != nil {
 		return err
 	}
-	err = os.Chmod(binfile, 0755)
+	err = os.Chmod(location, 0755)
 	if err != nil {
 		return err
 	}
@@ -48,10 +42,14 @@ func (m *Manager) DownloadAndExtract(conf *util.Configuration, info *release.GhR
 	return nil
 }
 
-func NewManager(ctx *util.AppCtx) *Manager {
-	return &Manager{
-		ctx:              ctx,
-		Release:          release.NewRelease(),
-		releaseInfoCache: make(map[string]*release.GhReleaseInfoResponse),
+func Download(downloadUrl, location string) error {
+	err := downloadFile(downloadUrl, location, http.DefaultClient)
+	if err != nil {
+		return err
 	}
+	err = os.Chmod(location, 0755)
+	if err != nil {
+		return err
+	}
+	return nil
 }

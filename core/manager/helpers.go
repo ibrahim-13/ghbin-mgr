@@ -2,6 +2,7 @@ package manager
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/gzip"
 	"errors"
 	"gbm/util"
@@ -72,6 +73,36 @@ func extractFileTarGz(targz, target string, match ...string) error {
 			defer destFile.Close()
 
 			_, err = io.Copy(destFile, tarReader)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	return os.ErrNotExist
+}
+
+func extractFileZip(zp, target string, match ...string) error {
+	zpReader, err := zip.OpenReader(zp)
+	if err != nil {
+		return err
+	}
+	defer zpReader.Close()
+
+	for _, file := range zpReader.File {
+		if util.ContainsAllMatches(file.Name, match...) {
+			destFile, err := os.Create(target)
+			if err != nil {
+				return err
+			}
+			defer destFile.Close()
+
+			f, err := file.Open()
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(destFile, f)
 			if err != nil {
 				return err
 			}

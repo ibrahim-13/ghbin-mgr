@@ -16,6 +16,16 @@ func ContainsAllMatches(str string, match ...string) bool {
 	return len(match) == matchCount
 }
 
+func ContainsAnyMatches(str string, match ...string) bool {
+	s := strings.ToLower(str)
+	for i := range match {
+		if strings.Contains(s, strings.ToLower(match[i])) {
+			return true
+		}
+	}
+	return false
+}
+
 func ParsePatternsFromString(pattern string) []string {
 	var formatted_patterns []string
 	for _, v := range strings.Split(pattern, ",") {

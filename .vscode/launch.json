@@ -5,12 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug",
+            "name": "Info",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": ".",
             "args": ["info", "-u", "jesseduffield", "-r", "lazygit", "-p", "__os__,__arch__,tar.gz", "-json"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Check",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": ".",
+            "args": ["check", "-u", "jesseduffield", "-r", "lazygit", "-t", "v0.44.1"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "InstallExtract",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": ".",
+            "args": ["installx", "-n", "lazygit", "-d", "/Users/arshad/ghbin", "-u", "jesseduffield", "-r", "lazygit", "-p", "__os__,__arch__,tar.gz", "-px", "lazygit"],
             "console": "integratedTerminal"
         }
     ]

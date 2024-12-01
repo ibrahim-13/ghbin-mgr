@@ -19,6 +19,8 @@ func main() {
 		cli.Check()
 	case "install":
 		cli.Install()
+	case "installx":
+		cli.InstallExtract()
 	default:
 		cli.PrintHelp()
 	}

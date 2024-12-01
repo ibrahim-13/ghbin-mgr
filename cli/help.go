@@ -7,5 +7,6 @@ func PrintHelp() {
 	fmt.Println("comands:")
 	fmt.Println("    info      get release information")
 	fmt.Println("    check     check for update")
-	fmt.Println("    install   install binary")
+	fmt.Println("    install   install binary from latest release")
+	fmt.Println("    installx  install binary from latest release archive")
 }

@@ -7,14 +7,15 @@ import (
 	"path/filepath"
 )
 
-func Install() {
+func InstallExtract() {
 	flags := util.NewFlagSet("install")
-	var binName, installDir, user, repo, pattern string
+	var binName, installDir, user, repo, pattern, patternx string
 	flags.StringVar(&binName, "n", "", "binary")
 	flags.StringVar(&installDir, "d", "", "installation directory")
 	flags.StringVar(&user, "u", "", "github user name")
 	flags.StringVar(&repo, "r", "", "github repository name")
 	flags.StringVar(&pattern, "p", "", "pattern to filter asset (comma separated, case-insensitive)")
+	flags.StringVar(&patternx, "px", "", "pattern to filter binary file in archive (comma separated, case-insensitive)")
 	flags.ParseCmdFlags()
 
 	flags.ValidateStringNotEmpty(binName, "binary name not provided")
@@ -22,11 +23,23 @@ func Install() {
 	flags.ValidateStringNotEmpty(user, "user not provided")
 	flags.ValidateStringNotEmpty(repo, "repository not provided")
 	flags.ValidateStringNotEmpty(pattern, "filter pattern for assets not provided")
+	flags.ValidateStringNotEmpty(patternx, "filter pattern for file in archive not provided")
 
 	gh_release := release.NewRelease()
 	info, err := gh_release.GetRelease(user, repo, util.ParsePatternsFromString(pattern)...)
 	if err != nil {
 		panic(err)
 	}
-	manager.Download(info.AssetDownloadLink, filepath.Join(installDir, binName))
+	var archiveType manager.ArchiveType
+	if util.ContainsAnyMatches(info.AssetName, ".tar.gz") {
+		archiveType = manager.ArchiveGzip
+	} else if util.ContainsAnyMatches(info.AssetName, ".zip") {
+		archiveType = manager.ArchiveZip
+	} else {
+		panic("could not detect archive type")
+	}
+	manager.DownloadAndExtract(info.AssetDownloadLink,
+		filepath.Join(installDir, binName),
+		archiveType,
+		util.ParsePatternsFromString(patternx)...)
 }
