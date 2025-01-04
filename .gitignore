@@ -27,3 +27,7 @@ config.json
 *.crt
 *.key
 *.pem
+
+# Project specific
+ghbin
+test_*.lua

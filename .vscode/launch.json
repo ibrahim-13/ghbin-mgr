@@ -28,7 +28,16 @@
             "request": "launch",
             "mode": "debug",
             "program": ".",
-            "args": ["installx", "-n", "lazygit", "-d", "/Users/arshad/ghbin", "-u", "jesseduffield", "-r", "lazygit", "-p", "__os__,__arch__,tar.gz", "-px", "lazygit"],
+            "args": ["installx", "-n", "lazygit", "-d", "${workspaceFolder}/ghbin", "-u", "jesseduffield", "-r", "lazygit", "-p", "__os__,__arch__,tar.gz", "-px", "lazygit"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Script",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": ".",
+            "args": ["script", "-f", "${workspaceFolder}/test_script.lua"],
             "console": "integratedTerminal"
         }
     ]
