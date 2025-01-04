@@ -6,10 +6,12 @@ Manage installation, update and removal of binaries from Github releases.
  - [X] Core
    - [X] get release info from Github API
    - [X] get release info from Github CLI
-   - [ ] package state
-   - [ ] package manager
+   - [X] check update
+   - [X] download binary to path
+   - [X] download archive and extract
  - [ ] CLI
-   - [ ] check update
-   - [ ] download binary to path
-   - [ ] download tar and extract
+   - [X] check update
+   - [X] download binary to path
+   - [X] download archive and extract
+   - [ ] script
  - [ ] Checksum validation
