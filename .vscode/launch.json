@@ -37,7 +37,7 @@
             "request": "launch",
             "mode": "debug",
             "program": ".",
-            "args": ["script", "-f", "${workspaceFolder}/test_script.lua"],
+            "args": ["code", "-f", "${workspaceFolder}/test_instruction.ghc"],
             "console": "integratedTerminal"
         }
     ]

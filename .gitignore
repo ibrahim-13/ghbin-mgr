@@ -30,4 +30,4 @@ config.json
 
 # Project specific
 ghbin
-test_*.lua
+test_*.ghc

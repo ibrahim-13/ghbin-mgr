@@ -13,5 +13,5 @@ Manage installation, update and removal of binaries from Github releases.
    - [X] check update
    - [X] download binary to path
    - [X] download archive and extract
-   - [ ] script
+   - [ ] instruction set
  - [ ] Checksum validation
