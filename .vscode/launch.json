@@ -32,7 +32,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Script",
+            "name": "InstructionCode",
             "type": "go",
             "request": "launch",
             "mode": "debug",

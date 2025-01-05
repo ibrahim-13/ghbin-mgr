@@ -28,10 +28,16 @@ func InstructionSet() {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		vm.Exec(line)
+		if err := vm.Load(line); err != nil {
+			panic(err)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
+		panic(err)
+	}
+
+	if err := vm.Exec(); err != nil {
 		panic(err)
 	}
 }
