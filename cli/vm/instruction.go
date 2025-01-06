@@ -1,7 +1,5 @@
 package vm
 
-import "math"
-
 type InstructionType string
 
 const (
@@ -12,7 +10,7 @@ const (
 	INST_GOTO     InstructionType = "goto"
 	INST_RETURN   InstructionType = "return"
 	INST_PRINT    InstructionType = "print"
-	INST_EXIR     InstructionType = "exit"
+	INST_EXIT     InstructionType = "exit"
 )
 
 type Instruction struct {
@@ -42,11 +40,18 @@ func (inst Instruction) PrintParam() int {
 	return 1
 }
 
-func (inst Instruction) LabelIc() int {
+func (inst Instruction) LabelName() string {
 	if inst.Type == INST_LABEL {
-		return inst.Data.(int)
+		return inst.Data.(string)
 	}
-	return math.MaxInt
+	return ""
+}
+
+func (inst Instruction) GotoLabel() string {
+	if inst.Type == INST_GOTO {
+		return inst.Data.(string)
+	}
+	return ""
 }
 
 func NewInstructionPush(lineNo int, params []Data) Instruction {
@@ -73,10 +78,39 @@ func NewInstructionPrint(lineNo int, count int) Instruction {
 	}
 }
 
-func NewInstructionLabel(lineNo, ic int) Instruction {
+func NewInstructionLabel(lineNo int, name string) Instruction {
 	return Instruction{
 		Type:       INST_LABEL,
 		LineNumber: lineNo,
-		Data:       ic,
+		Data:       name,
+	}
+}
+
+func NewInstructionGoto(lineNo int, label string) Instruction {
+	return Instruction{
+		Type:       INST_LABEL,
+		LineNumber: lineNo,
+		Data:       label,
+	}
+}
+
+func NewInstructionPushAddr(lineNo int) Instruction {
+	return Instruction{
+		Type:       INST_PUSHADDR,
+		LineNumber: lineNo,
+	}
+}
+
+func NewInstructionReturn(lineNo int) Instruction {
+	return Instruction{
+		Type:       INST_RETURN,
+		LineNumber: lineNo,
+	}
+}
+
+func NewInstructionExit(lineNo int) Instruction {
+	return Instruction{
+		Type:       INST_EXIT,
+		LineNumber: lineNo,
 	}
 }

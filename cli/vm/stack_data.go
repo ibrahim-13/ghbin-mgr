@@ -20,3 +20,15 @@ func NewData(t DataType, d any) Data {
 func (d Data) GetData() any {
 	return d.data
 }
+
+func (d Data) GetInt() int {
+	return d.data.(int)
+}
+
+func (d Data) GetFloat() float64 {
+	return d.data.(float64)
+}
+
+func (d Data) GetString() string {
+	return d.data.(string)
+}

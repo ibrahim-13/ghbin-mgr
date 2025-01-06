@@ -23,7 +23,7 @@ Manage installation, update and removal of binaries from Github releases.
 - Push 1 or multiple values to stack.
 - For multiple values, use space ` ` as separator
 - Use double quote for string `"`
-- When pushing multiple values, the params will be pushed from left to right
+- When pushing multiple values, the params will be pushed from right to left
 ```
 push "this is a test" 1 3.4 "another test"
 push 1
@@ -43,7 +43,7 @@ pop 3
 ### print
 
 - Print 1 or multiple values from stack
-- Without param, a single value will be poped and printed
+- Without param, a single value will be peaked and printed
 - 
 
 ```

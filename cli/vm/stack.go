@@ -17,6 +17,16 @@ func (s *Stack) Push(d Data) {
 	s.stack = append(s.stack, d)
 }
 
+func (s *Stack) Peak(num int) (Data, error) {
+	if len(s.stack) < 1 {
+		return Data{}, errors.New("stack empty")
+	}
+	if num < 0 {
+		return Data{}, errors.New("peak number can not be negetive")
+	}
+	return s.stack[len(s.stack)-num-1], nil
+}
+
 func (s *Stack) Pop() (Data, error) {
 	if len(s.stack) < 1 {
 		return Data{}, errors.New("stack empty")

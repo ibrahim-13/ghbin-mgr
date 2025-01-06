@@ -3,6 +3,7 @@ package vm
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -66,21 +67,50 @@ func (vm *StackVm) Exec() error {
 		case INST_PRINT:
 			var params []any
 			for i := 0; i < inst.PrintParam(); i++ {
-				val, err := vm.Stack.Pop()
+				val, err := vm.Stack.Peak(i)
 				if err != nil {
 					return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 				}
 				params = append(params, val.data)
 			}
 			fmt.Println(params...)
+		case INST_PUSHADDR:
+			vm.Stack.Push(Data{Type: DT_INT, data: ic + 1})
+		case INST_GOTO:
+			hasFoundLabelIc := false
+			for i, v := range vm.instructions {
+				if v.Type == INST_LABEL && v.LabelName() == inst.GotoLabel() {
+					ic = i
+					hasFoundLabelIc = true
+					break
+				}
+			}
+			if !hasFoundLabelIc {
+				return fmt.Errorf("line %d : could not find label: %s", inst.LineNumber, inst.GotoLabel())
+			}
+		case INST_RETURN:
+			new_ic, err := vm.Stack.Pop()
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+			if new_ic.Type != DT_INT {
+				return fmt.Errorf("line %d : poped value for return ic is not int", inst.LineNumber)
+			}
+			ic = new_ic.GetInt()
+			if ic < 0 || ic >= len(vm.instructions) {
+				return fmt.Errorf("line %d : ic is out of bounds", inst.LineNumber)
+			}
+		case INST_EXIT:
+			ic = math.MaxInt
 		}
+		ic += 1
 	}
 	return nil
 }
 
 func (vm *StackVm) processLine(line string, counter int) error {
 	if strings.HasPrefix(line, ":") && strings.HasSuffix(line, ":") {
-		vm.AddInstruction(NewInstructionLabel(counter, len(vm.instructions)-1))
+		vm.AddInstruction(NewInstructionLabel(counter, line))
 		return nil
 	}
 
@@ -98,6 +128,9 @@ func (vm *StackVm) processLine(line string, counter int) error {
 		params, err := ParseParameters(inst[1])
 		if err != nil {
 			return fmt.Errorf("line %d: %w", counter, err)
+		}
+		for i, j := 0, len(params)-1; i < j; i, j = i+1, j-1 {
+			params[i], params[j] = params[j], params[i]
 		}
 		vm.AddInstruction(NewInstructionPush(counter, params))
 	case INST_POP:
@@ -120,6 +153,26 @@ func (vm *StackVm) processLine(line string, counter int) error {
 			pop_count = count
 		}
 		vm.AddInstruction(NewInstructionPrint(counter, pop_count))
+	case INST_PUSHADDR:
+		if len(inst) > 1 {
+			return fmt.Errorf("line %d : pushaddr can not have param", counter)
+		}
+		vm.AddInstruction(NewInstructionPushAddr(counter))
+	case INST_GOTO:
+		if len(inst) < 2 || inst[2] == "" {
+			return fmt.Errorf("line %d : invalid goto label name", counter)
+		}
+		vm.AddInstruction(NewInstructionGoto(counter, inst[2]))
+	case INST_RETURN:
+		if len(inst) > 1 {
+			return fmt.Errorf("line %d : return can not have param", counter)
+		}
+		vm.AddInstruction(NewInstructionReturn(counter))
+	case INST_EXIT:
+		if len(inst) > 1 {
+			return fmt.Errorf("line %d : exit can not have param", counter)
+		}
+		vm.AddInstruction(NewInstructionExit(counter))
 	}
 
 	return nil
