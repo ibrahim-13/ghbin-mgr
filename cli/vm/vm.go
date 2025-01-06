@@ -8,36 +8,19 @@ import (
 	"strings"
 )
 
-type Instruction = string
-
-type InstructionSet struct {
-	Instruction Instruction
-	LineNumber  int
-	IsLabel     bool
-	Params      []Data
-}
-
-const (
-	INST_PUSH   Instruction = "push"
-	INST_POP    Instruction = "pop"
-	INST_NONE   Instruction = "none"
-	INST_CALL   Instruction = "call"
-	INST_GOTO   Instruction = "goto"
-	INST_RETURN Instruction = "return"
-	INST_PRINT  Instruction = "print"
-)
-
 type StackVm struct {
 	Stack        *Stack
-	instructions []InstructionSet
-	labelMap     map[string]int
+	instructions []Instruction
 }
 
 func NewStackVm() *StackVm {
 	return &StackVm{
-		Stack:    NewStack(),
-		labelMap: make(map[string]int),
+		Stack: NewStack(),
 	}
+}
+
+func (vm *StackVm) AddInstruction(inst Instruction) {
+	vm.instructions = append(vm.instructions, inst)
 }
 
 func (vm *StackVm) Load(instructionFilePath string) error {
@@ -53,62 +36,8 @@ func (vm *StackVm) Load(instructionFilePath string) error {
 	counter := 1
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.HasPrefix(line, ":") && strings.HasSuffix(line, ":") {
-			vm.instructions = append(vm.instructions, InstructionSet{
-				Instruction: INST_NONE,
-				LineNumber:  counter,
-				IsLabel:     true,
-			})
-			vm.labelMap[line] = len(vm.instructions) - 1
-		} else {
-			inst := strings.SplitN(line, " ", 2)
-			if len(inst) > 0 {
-				switch strings.ToLower(inst[0]) {
-				case INST_PUSH:
-					if len(inst) < 2 {
-						break
-					}
-					params, err := ParseParameters(inst[1])
-					if err != nil {
-						return fmt.Errorf("line %d: %w", counter, err)
-					}
-					vm.instructions = append(vm.instructions, InstructionSet{
-						Instruction: INST_PUSH,
-						LineNumber:  counter,
-						Params:      params,
-					})
-				case INST_POP:
-					pop_count := 1
-					if len(inst) > 1 {
-						count, err := strconv.Atoi(inst[1])
-						if err != nil {
-							return fmt.Errorf("line %d : invalid pop param, int required: %s", counter, inst[1])
-						}
-						pop_count = count
-					}
-					vm.instructions = append(vm.instructions, InstructionSet{
-						Instruction: INST_POP,
-						LineNumber:  counter,
-						Params:      []Data{NewData(DT_INT, pop_count)},
-					})
-				case INST_PRINT:
-					pop_count := 1
-					if len(inst) > 1 {
-						count, err := strconv.Atoi(inst[1])
-						if err != nil {
-							return fmt.Errorf("line %d : invalid print param, int required: %s", counter, inst[1])
-						}
-						pop_count = count
-					}
-					vm.instructions = append(vm.instructions, InstructionSet{
-						Instruction: INST_PRINT,
-						LineNumber:  counter,
-						Params:      []Data{NewData(DT_INT, pop_count)},
-					})
-				}
-			}
-		}
-
+		vm.processLine(line, counter)
+		counter += 1
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -119,14 +48,16 @@ func (vm *StackVm) Load(instructionFilePath string) error {
 }
 
 func (vm *StackVm) Exec() error {
-	for _, inst := range vm.instructions {
-		switch inst.Instruction {
+	ic := 0
+	for ic < len(vm.instructions) {
+		inst := vm.instructions[ic]
+		switch inst.Type {
 		case INST_PUSH:
-			for _, v := range inst.Params {
+			for _, v := range inst.PushParam() {
 				vm.Stack.Push(v)
 			}
 		case INST_POP:
-			for i := 0; i < inst.Params[0].data.(int); i++ {
+			for i := 0; i < inst.PopParam(); i++ {
 				_, err := vm.Stack.Pop()
 				if err != nil {
 					return fmt.Errorf("line %d : %w", inst.LineNumber, err)
@@ -134,7 +65,7 @@ func (vm *StackVm) Exec() error {
 			}
 		case INST_PRINT:
 			var params []any
-			for i := 0; i < inst.Params[0].data.(int); i++ {
+			for i := 0; i < inst.PrintParam(); i++ {
 				val, err := vm.Stack.Pop()
 				if err != nil {
 					return fmt.Errorf("line %d : %w", inst.LineNumber, err)
@@ -144,5 +75,52 @@ func (vm *StackVm) Exec() error {
 			fmt.Println(params...)
 		}
 	}
+	return nil
+}
+
+func (vm *StackVm) processLine(line string, counter int) error {
+	if strings.HasPrefix(line, ":") && strings.HasSuffix(line, ":") {
+		vm.AddInstruction(NewInstructionLabel(counter, len(vm.instructions)-1))
+		return nil
+	}
+
+	inst := strings.SplitN(line, " ", 2)
+	if len(inst) < 1 {
+		return nil
+	}
+
+	inst_cmd := strings.ToLower(inst[0])
+	switch InstructionType(inst_cmd) {
+	case INST_PUSH:
+		if len(inst) < 2 {
+			break
+		}
+		params, err := ParseParameters(inst[1])
+		if err != nil {
+			return fmt.Errorf("line %d: %w", counter, err)
+		}
+		vm.AddInstruction(NewInstructionPush(counter, params))
+	case INST_POP:
+		pop_count := 1
+		if len(inst) > 1 {
+			count, err := strconv.Atoi(inst[1])
+			if err != nil {
+				return fmt.Errorf("line %d : invalid pop param, int required: %s", counter, inst[1])
+			}
+			pop_count = count
+		}
+		vm.AddInstruction(NewInstructionPop(counter, pop_count))
+	case INST_PRINT:
+		pop_count := 1
+		if len(inst) > 1 {
+			count, err := strconv.Atoi(inst[1])
+			if err != nil {
+				return fmt.Errorf("line %d : invalid print param, int required: %s", counter, inst[1])
+			}
+			pop_count = count
+		}
+		vm.AddInstruction(NewInstructionPrint(counter, pop_count))
+	}
+
 	return nil
 }
