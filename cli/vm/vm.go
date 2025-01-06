@@ -1,7 +1,9 @@
 package vm
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -10,7 +12,7 @@ type Instruction = string
 
 type InstructionSet struct {
 	Instruction Instruction
-	LineNo      int
+	LineNumber  int
 	IsLabel     bool
 	Params      []Data
 }
@@ -27,7 +29,6 @@ const (
 
 type StackVm struct {
 	Stack        *Stack
-	counter      int
 	instructions []InstructionSet
 	labelMap     map[string]int
 }
@@ -39,63 +40,81 @@ func NewStackVm() *StackVm {
 	}
 }
 
-func (vm *StackVm) Load(line string) error {
-	if strings.HasPrefix(line, ":") && strings.HasSuffix(line, ":") {
-		vm.instructions = append(vm.instructions, InstructionSet{
-			Instruction: INST_NONE,
-			LineNo:      vm.counter,
-			IsLabel:     true,
-		})
-		vm.labelMap[line] = len(vm.instructions) - 1
-	} else {
-		inst := strings.SplitN(line, " ", 2)
-		if len(inst) > 0 {
-			switch strings.ToLower(inst[0]) {
-			case INST_PUSH:
-				if len(inst) < 2 {
-					break
-				}
-				params, err := ParseParameters(inst[1])
-				if err != nil {
-					return fmt.Errorf("line %d: %w", vm.counter+1, err)
-				}
-				vm.instructions = append(vm.instructions, InstructionSet{
-					Instruction: INST_PUSH,
-					LineNo:      vm.counter,
-					Params:      params,
-				})
-			case INST_POP:
-				pop_count := 1
-				if len(inst) > 1 {
-					count, err := strconv.Atoi(inst[1])
-					if err != nil {
-						return fmt.Errorf("line %d : invalid pop param, int required: %s", vm.counter+1, inst[1])
+func (vm *StackVm) Load(instructionFilePath string) error {
+	file, err := os.Open(instructionFilePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	counter := 1
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, ":") && strings.HasSuffix(line, ":") {
+			vm.instructions = append(vm.instructions, InstructionSet{
+				Instruction: INST_NONE,
+				LineNumber:  counter,
+				IsLabel:     true,
+			})
+			vm.labelMap[line] = len(vm.instructions) - 1
+		} else {
+			inst := strings.SplitN(line, " ", 2)
+			if len(inst) > 0 {
+				switch strings.ToLower(inst[0]) {
+				case INST_PUSH:
+					if len(inst) < 2 {
+						break
 					}
-					pop_count = count
-				}
-				vm.instructions = append(vm.instructions, InstructionSet{
-					Instruction: INST_POP,
-					LineNo:      vm.counter,
-					Params:      []Data{NewData(DT_INT, pop_count)},
-				})
-			case INST_PRINT:
-				pop_count := 1
-				if len(inst) > 1 {
-					count, err := strconv.Atoi(inst[1])
+					params, err := ParseParameters(inst[1])
 					if err != nil {
-						return fmt.Errorf("line %d : invalid print param, int required: %s", vm.counter+1, inst[1])
+						return fmt.Errorf("line %d: %w", counter, err)
 					}
-					pop_count = count
+					vm.instructions = append(vm.instructions, InstructionSet{
+						Instruction: INST_PUSH,
+						LineNumber:  counter,
+						Params:      params,
+					})
+				case INST_POP:
+					pop_count := 1
+					if len(inst) > 1 {
+						count, err := strconv.Atoi(inst[1])
+						if err != nil {
+							return fmt.Errorf("line %d : invalid pop param, int required: %s", counter, inst[1])
+						}
+						pop_count = count
+					}
+					vm.instructions = append(vm.instructions, InstructionSet{
+						Instruction: INST_POP,
+						LineNumber:  counter,
+						Params:      []Data{NewData(DT_INT, pop_count)},
+					})
+				case INST_PRINT:
+					pop_count := 1
+					if len(inst) > 1 {
+						count, err := strconv.Atoi(inst[1])
+						if err != nil {
+							return fmt.Errorf("line %d : invalid print param, int required: %s", counter, inst[1])
+						}
+						pop_count = count
+					}
+					vm.instructions = append(vm.instructions, InstructionSet{
+						Instruction: INST_PRINT,
+						LineNumber:  counter,
+						Params:      []Data{NewData(DT_INT, pop_count)},
+					})
 				}
-				vm.instructions = append(vm.instructions, InstructionSet{
-					Instruction: INST_PRINT,
-					LineNo:      vm.counter,
-					Params:      []Data{NewData(DT_INT, pop_count)},
-				})
 			}
 		}
+
 	}
-	vm.counter += 1
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -110,7 +129,7 @@ func (vm *StackVm) Exec() error {
 			for i := 0; i < inst.Params[0].data.(int); i++ {
 				_, err := vm.Stack.Pop()
 				if err != nil {
-					return fmt.Errorf("line %d : %w", inst.LineNo+1, err)
+					return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 				}
 			}
 		case INST_PRINT:
@@ -118,7 +137,7 @@ func (vm *StackVm) Exec() error {
 			for i := 0; i < inst.Params[0].data.(int); i++ {
 				val, err := vm.Stack.Pop()
 				if err != nil {
-					return fmt.Errorf("line %d : %w", inst.LineNo+1, err)
+					return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 				}
 				params = append(params, val.data)
 			}
