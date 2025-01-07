@@ -3,14 +3,13 @@ package vm
 type InstructionType string
 
 const (
-	INST_PUSH     InstructionType = "push"
-	INST_POP      InstructionType = "pop"
-	INST_LABEL    InstructionType = "label"
-	INST_PUSHADDR InstructionType = "pushaddr"
-	INST_GOTO     InstructionType = "goto"
-	INST_RETURN   InstructionType = "return"
-	INST_PRINT    InstructionType = "print"
-	INST_EXIT     InstructionType = "exit"
+	INST_PUSH   InstructionType = "push"
+	INST_POP    InstructionType = "pop"
+	INST_LABEL  InstructionType = "label"
+	INST_GOTO   InstructionType = "goto"
+	INST_RETURN InstructionType = "return"
+	INST_PRINT  InstructionType = "print"
+	INST_EXIT   InstructionType = "exit"
 )
 
 type Instruction struct {
@@ -88,16 +87,9 @@ func NewInstructionLabel(lineNo int, name string) Instruction {
 
 func NewInstructionGoto(lineNo int, label string) Instruction {
 	return Instruction{
-		Type:       INST_LABEL,
+		Type:       INST_GOTO,
 		LineNumber: lineNo,
 		Data:       label,
-	}
-}
-
-func NewInstructionPushAddr(lineNo int) Instruction {
-	return Instruction{
-		Type:       INST_PUSHADDR,
-		LineNumber: lineNo,
 	}
 }
 

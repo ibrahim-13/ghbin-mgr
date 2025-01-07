@@ -53,10 +53,13 @@ func (vm *StackVm) Exec() error {
 	for ic < len(vm.instructions) {
 		inst := vm.instructions[ic]
 		switch inst.Type {
+		case INST_LABEL:
+			ic += 1
 		case INST_PUSH:
 			for _, v := range inst.PushParam() {
 				vm.Stack.Push(v)
 			}
+			ic += 1
 		case INST_POP:
 			for i := 0; i < inst.PopParam(); i++ {
 				_, err := vm.Stack.Pop()
@@ -64,6 +67,7 @@ func (vm *StackVm) Exec() error {
 					return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 				}
 			}
+			ic += 1
 		case INST_PRINT:
 			var params []any
 			for i := 0; i < inst.PrintParam(); i++ {
@@ -74,12 +78,12 @@ func (vm *StackVm) Exec() error {
 				params = append(params, val.data)
 			}
 			fmt.Println(params...)
-		case INST_PUSHADDR:
-			vm.Stack.Push(Data{Type: DT_INT, data: ic + 1})
+			ic += 1
 		case INST_GOTO:
 			hasFoundLabelIc := false
 			for i, v := range vm.instructions {
 				if v.Type == INST_LABEL && v.LabelName() == inst.GotoLabel() {
+					vm.Stack.PushRet(ic + 1)
 					ic = i
 					hasFoundLabelIc = true
 					break
@@ -88,22 +92,19 @@ func (vm *StackVm) Exec() error {
 			if !hasFoundLabelIc {
 				return fmt.Errorf("line %d : could not find label: %s", inst.LineNumber, inst.GotoLabel())
 			}
+			ic += 1
 		case INST_RETURN:
-			new_ic, err := vm.Stack.Pop()
+			new_ic, err := vm.Stack.PopRet()
 			if err != nil {
 				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 			}
-			if new_ic.Type != DT_INT {
-				return fmt.Errorf("line %d : poped value for return ic is not int", inst.LineNumber)
-			}
-			ic = new_ic.GetInt()
 			if ic < 0 || ic >= len(vm.instructions) {
 				return fmt.Errorf("line %d : ic is out of bounds", inst.LineNumber)
 			}
+			ic = new_ic
 		case INST_EXIT:
-			ic = math.MaxInt
+			ic = math.MaxInt - 1
 		}
-		ic += 1
 	}
 	return nil
 }
@@ -153,16 +154,11 @@ func (vm *StackVm) processLine(line string, counter int) error {
 			pop_count = count
 		}
 		vm.AddInstruction(NewInstructionPrint(counter, pop_count))
-	case INST_PUSHADDR:
-		if len(inst) > 1 {
-			return fmt.Errorf("line %d : pushaddr can not have param", counter)
-		}
-		vm.AddInstruction(NewInstructionPushAddr(counter))
 	case INST_GOTO:
-		if len(inst) < 2 || inst[2] == "" {
+		if len(inst) < 2 || inst[1] == "" {
 			return fmt.Errorf("line %d : invalid goto label name", counter)
 		}
-		vm.AddInstruction(NewInstructionGoto(counter, inst[2]))
+		vm.AddInstruction(NewInstructionGoto(counter, inst[1]))
 	case INST_RETURN:
 		if len(inst) > 1 {
 			return fmt.Errorf("line %d : return can not have param", counter)
