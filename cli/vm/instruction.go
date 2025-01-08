@@ -3,13 +3,15 @@ package vm
 type InstructionType string
 
 const (
-	INST_PUSH   InstructionType = "push"
-	INST_POP    InstructionType = "pop"
-	INST_LABEL  InstructionType = "label"
-	INST_GOTO   InstructionType = "goto"
-	INST_RETURN InstructionType = "return"
-	INST_PRINT  InstructionType = "print"
-	INST_EXIT   InstructionType = "exit"
+	INST_PUSH    InstructionType = "push"
+	INST_POP     InstructionType = "pop"
+	INST_LABEL   InstructionType = "label"
+	INST_GOTO    InstructionType = "goto"
+	INST_RETURN  InstructionType = "return"
+	INST_PRINT   InstructionType = "print"
+	INST_EXIT    InstructionType = "exit"
+	INST_JUMPEQ  InstructionType = "jumpeq"
+	INST_JUMPEQN InstructionType = "jumpeqn"
 )
 
 type Instruction struct {
@@ -48,6 +50,20 @@ func (inst Instruction) LabelName() string {
 
 func (inst Instruction) GotoLabel() string {
 	if inst.Type == INST_GOTO {
+		return inst.Data.(string)
+	}
+	return ""
+}
+
+func (inst Instruction) JumpEqLabel() string {
+	if inst.Type == INST_JUMPEQ {
+		return inst.Data.(string)
+	}
+	return ""
+}
+
+func (inst Instruction) JumpEqNLabel() string {
+	if inst.Type == INST_JUMPEQN {
 		return inst.Data.(string)
 	}
 	return ""
@@ -104,5 +120,21 @@ func NewInstructionExit(lineNo int) Instruction {
 	return Instruction{
 		Type:       INST_EXIT,
 		LineNumber: lineNo,
+	}
+}
+
+func NewInstructionJumpEq(lineNo int, label string) Instruction {
+	return Instruction{
+		Type:       INST_JUMPEQ,
+		LineNumber: lineNo,
+		Data:       label,
+	}
+}
+
+func NewInstructionJumpEqN(lineNo int, label string) Instruction {
+	return Instruction{
+		Type:       INST_JUMPEQN,
+		LineNumber: lineNo,
+		Data:       label,
 	}
 }

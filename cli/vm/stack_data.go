@@ -1,5 +1,7 @@
 package vm
 
+import "errors"
+
 type DataType string
 
 const (
@@ -31,4 +33,36 @@ func (d Data) GetFloat() float64 {
 
 func (d Data) GetString() string {
 	return d.data.(string)
+}
+
+func (d Data) CompareEq(v Data) (bool, error) {
+	if d.Type != v.Type {
+		return false, errors.New("data type does not match for jumpeq operation")
+	}
+	switch d.Type {
+	case DT_INT:
+		return d.GetInt() == v.GetInt(), nil
+	case DT_FLOAT:
+		return d.GetFloat() == v.GetFloat(), nil
+	case DT_STRING:
+		return d.GetString() == v.GetString(), nil
+	default:
+		return false, errors.New("data type comparison not implemented for jumpeq operation")
+	}
+}
+
+func (d Data) CompareEqN(v Data) (bool, error) {
+	if d.Type != v.Type {
+		return false, errors.New("data type does not match for jumpeq operation")
+	}
+	switch d.Type {
+	case DT_INT:
+		return d.GetInt() != v.GetInt(), nil
+	case DT_FLOAT:
+		return d.GetFloat() != v.GetFloat(), nil
+	case DT_STRING:
+		return d.GetString() != v.GetString(), nil
+	default:
+		return false, errors.New("data type comparison not implemented for jumpeq operation")
+	}
 }

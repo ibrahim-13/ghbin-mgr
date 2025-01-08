@@ -51,7 +51,7 @@ func (vm *StackVm) Load(instructionFilePath string) error {
 func (vm *StackVm) Exec() error {
 	ic := 0
 	for ic < len(vm.instructions) {
-		inst := vm.instructions[ic]
+		inst, incrementIc := vm.instructions[ic], true
 		switch inst.Type {
 		case INST_LABEL:
 			ic += 1
@@ -59,7 +59,6 @@ func (vm *StackVm) Exec() error {
 			for _, v := range inst.PushParam() {
 				vm.Stack.Push(v)
 			}
-			ic += 1
 		case INST_POP:
 			for i := 0; i < inst.PopParam(); i++ {
 				_, err := vm.Stack.Pop()
@@ -67,7 +66,6 @@ func (vm *StackVm) Exec() error {
 					return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 				}
 			}
-			ic += 1
 		case INST_PRINT:
 			var params []any
 			for i := 0; i < inst.PrintParam(); i++ {
@@ -78,21 +76,13 @@ func (vm *StackVm) Exec() error {
 				params = append(params, val.data)
 			}
 			fmt.Println(params...)
-			ic += 1
 		case INST_GOTO:
-			hasFoundLabelIc := false
-			for i, v := range vm.instructions {
-				if v.Type == INST_LABEL && v.LabelName() == inst.GotoLabel() {
-					vm.Stack.PushRet(ic + 1)
-					ic = i
-					hasFoundLabelIc = true
-					break
-				}
+			ic_new, err := vm.getIcForLabel(inst.GotoLabel())
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 			}
-			if !hasFoundLabelIc {
-				return fmt.Errorf("line %d : could not find label: %s", inst.LineNumber, inst.GotoLabel())
-			}
-			ic += 1
+			vm.Stack.PushRet(ic + 1)
+			ic = ic_new
 		case INST_RETURN:
 			new_ic, err := vm.Stack.PopRet()
 			if err != nil {
@@ -101,9 +91,56 @@ func (vm *StackVm) Exec() error {
 			if ic < 0 || ic >= len(vm.instructions) {
 				return fmt.Errorf("line %d : ic is out of bounds", inst.LineNumber)
 			}
-			ic = new_ic
+			ic, incrementIc = new_ic, false
 		case INST_EXIT:
-			ic = math.MaxInt - 1
+			ic, incrementIc = math.MaxInt-1, false
+		case INST_JUMPEQ:
+			var1, err := vm.Stack.Peak(0)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+			var2, err := vm.Stack.Peak(1)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+			isEqual, err := var1.CompareEq(var2)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+
+			if isEqual {
+				ic_new, err := vm.getIcForLabel(inst.JumpEqLabel())
+				if err != nil {
+					return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+				}
+				vm.Stack.PushRet(ic + 1)
+				ic = ic_new
+			}
+		case INST_JUMPEQN:
+			var1, err := vm.Stack.Peak(0)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+			var2, err := vm.Stack.Peak(1)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+			isEqual, err := var1.CompareEqN(var2)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+
+			if isEqual {
+				ic_new, err := vm.getIcForLabel(inst.JumpEqNLabel())
+				if err != nil {
+					return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+				}
+				vm.Stack.PushRet(ic + 1)
+				ic = ic_new
+			}
+		}
+		if incrementIc {
+			ic += 1
 		}
 	}
 	return nil
@@ -169,7 +206,26 @@ func (vm *StackVm) processLine(line string, counter int) error {
 			return fmt.Errorf("line %d : exit can not have param", counter)
 		}
 		vm.AddInstruction(NewInstructionExit(counter))
+	case INST_JUMPEQ:
+		if len(inst) < 2 || inst[1] == "" {
+			return fmt.Errorf("line %d : invalid jumpeq label name", counter)
+		}
+		vm.AddInstruction(NewInstructionJumpEq(counter, inst[1]))
+	case INST_JUMPEQN:
+		if len(inst) < 2 || inst[1] == "" {
+			return fmt.Errorf("line %d : invalid jumpeqn label name", counter)
+		}
+		vm.AddInstruction(NewInstructionJumpEqN(counter, inst[1]))
 	}
 
 	return nil
+}
+
+func (vm *StackVm) getIcForLabel(label string) (int, error) {
+	for i, v := range vm.instructions {
+		if v.Type == INST_LABEL && v.LabelName() == label {
+			return i, nil
+		}
+	}
+	return math.MaxInt, fmt.Errorf("could not find label: %s", label)
 }
