@@ -3,15 +3,20 @@ package vm
 type InstructionType string
 
 const (
-	INST_PUSH    InstructionType = "push"
-	INST_POP     InstructionType = "pop"
-	INST_LABEL   InstructionType = "label"
-	INST_GOTO    InstructionType = "goto"
-	INST_RETURN  InstructionType = "return"
-	INST_PRINT   InstructionType = "print"
-	INST_EXIT    InstructionType = "exit"
-	INST_JUMPEQ  InstructionType = "jumpeq"
-	INST_JUMPEQN InstructionType = "jumpeqn"
+	INST_PUSH     InstructionType = "push"
+	INST_POP      InstructionType = "pop"
+	INST_LABEL    InstructionType = "label"
+	INST_GOTO     InstructionType = "goto"
+	INST_RETURN   InstructionType = "return"
+	INST_PRINT    InstructionType = "print"
+	INST_EXIT     InstructionType = "exit"
+	INST_JUMPEQ   InstructionType = "jumpeq"
+	INST_JUMPEQN  InstructionType = "jumpeqn"
+	INST_KVLOAD   InstructionType = "kvload"
+	INST_KVSAVE   InstructionType = "kvsave"
+	INST_KVGET    InstructionType = "kvget"
+	INST_KVSET    InstructionType = "kvset"
+	INST_KVDELETE InstructionType = "kvdelete"
 )
 
 type Instruction struct {
@@ -64,6 +69,34 @@ func (inst Instruction) JumpEqLabel() string {
 
 func (inst Instruction) JumpEqNLabel() string {
 	if inst.Type == INST_JUMPEQN {
+		return inst.Data.(string)
+	}
+	return ""
+}
+
+func (inst Instruction) KvLoadFilePath() string {
+	if inst.Type == INST_KVLOAD {
+		return inst.Data.(string)
+	}
+	return ""
+}
+
+func (inst Instruction) KvGet() string {
+	if inst.Type == INST_KVGET {
+		return inst.Data.(string)
+	}
+	return ""
+}
+
+func (inst Instruction) KvSet() string {
+	if inst.Type == INST_KVSET {
+		return inst.Data.(string)
+	}
+	return ""
+}
+
+func (inst Instruction) KvDelete() string {
+	if inst.Type == INST_KVDELETE {
 		return inst.Data.(string)
 	}
 	return ""
@@ -136,5 +169,44 @@ func NewInstructionJumpEqN(lineNo int, label string) Instruction {
 		Type:       INST_JUMPEQN,
 		LineNumber: lineNo,
 		Data:       label,
+	}
+}
+
+func NewInstructionKvLoad(lineNo int, filePath string) Instruction {
+	return Instruction{
+		Type:       INST_KVLOAD,
+		LineNumber: lineNo,
+		Data:       filePath,
+	}
+}
+
+func NewInstructionKvSave(lineNo int) Instruction {
+	return Instruction{
+		Type:       INST_KVSAVE,
+		LineNumber: lineNo,
+	}
+}
+
+func NewInstructionKvGet(lineNo int, key string) Instruction {
+	return Instruction{
+		Type:       INST_KVGET,
+		LineNumber: lineNo,
+		Data:       key,
+	}
+}
+
+func NewInstructionKvSet(lineNo int, key string) Instruction {
+	return Instruction{
+		Type:       INST_KVSET,
+		LineNumber: lineNo,
+		Data:       key,
+	}
+}
+
+func NewInstructionKvDelete(lineNo int, key string) Instruction {
+	return Instruction{
+		Type:       INST_KVDELETE,
+		LineNumber: lineNo,
+		Data:       key,
 	}
 }

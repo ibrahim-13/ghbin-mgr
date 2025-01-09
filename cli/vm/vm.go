@@ -2,6 +2,7 @@ package vm
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -12,11 +13,14 @@ import (
 type StackVm struct {
 	Stack        *Stack
 	instructions []Instruction
+	kv           map[string]string
+	kv_filepath  string
 }
 
 func NewStackVm() *StackVm {
 	return &StackVm{
 		Stack: NewStack(),
+		kv:    make(map[string]string),
 	}
 }
 
@@ -138,6 +142,38 @@ func (vm *StackVm) Exec() error {
 				vm.Stack.PushRet(ic + 1)
 				ic = ic_new
 			}
+		case INST_KVLOAD:
+			fileLoc := inst.KvLoadFilePath()
+			err := vm.loadKv(fileLoc)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+		case INST_KVSAVE:
+			err := vm.saveKv(vm.kv_filepath)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+		case INST_KVGET:
+			key := inst.KvGet()
+			val := vm.kv[key]
+			if val != "" {
+				return fmt.Errorf("line %d : value for the given key is empty", inst.LineNumber, err)
+			}
+			vm.Stack.Push(NewData(DT_STRING, val))
+		case INST_KVSET:
+			key := inst.KvSet()
+			val := vm.kv[key]
+			if val != "" {
+				return fmt.Errorf("line %d : value for the given key is empty", inst.LineNumber, err)
+			}
+			vm.Stack.Push(NewData(DT_STRING, val))
+		case INST_KVDELETE:
+			key := inst.KvGet()
+			val := vm.kv[key]
+			if val != "" {
+				return fmt.Errorf("line %d : value for the given key is empty", inst.LineNumber, err)
+			}
+			delete(vm.kv, key)
 		}
 		if incrementIc {
 			ic += 1
@@ -216,6 +252,87 @@ func (vm *StackVm) processLine(line string, counter int) error {
 			return fmt.Errorf("line %d : invalid jumpeqn label name", counter)
 		}
 		vm.AddInstruction(NewInstructionJumpEqN(counter, inst[1]))
+	case INST_KVLOAD:
+		if len(inst) < 2 {
+			break
+		}
+		params, err := ParseParameters(inst[1])
+		if err != nil {
+			return fmt.Errorf("line %d: %w", counter, err)
+		}
+		if len(params) > 1 {
+			return fmt.Errorf("line %d: kvload expects only one string param for file path", counter)
+		}
+		if params[0].Type != DT_STRING {
+			return fmt.Errorf("line %d: invalid param type for kvload", counter)
+		}
+		vm.kv_filepath = params[0].GetString()
+		if vm.kv_filepath == "" {
+			return fmt.Errorf("line %d: empty param type for kvload", counter)
+		}
+		vm.AddInstruction(NewInstructionKvLoad(counter, vm.kv_filepath))
+	case INST_KVSAVE:
+		if len(inst) != 2 {
+			return fmt.Errorf("line %d: only one parameter is permitted", counter)
+		}
+		vm.AddInstruction(NewInstructionKvSave(counter))
+	case INST_KVGET:
+		if len(inst) < 2 {
+			break
+		}
+		params, err := ParseParameters(inst[1])
+		if err != nil {
+			return fmt.Errorf("line %d: %w", counter, err)
+		}
+		if len(params) > 1 {
+			return fmt.Errorf("line %d: kvget expects only one string param for key", counter)
+		}
+		if params[0].Type != DT_STRING {
+			return fmt.Errorf("line %d: invalid param type for kvget", counter)
+		}
+		key := params[0].GetString()
+		if key == "" {
+			return fmt.Errorf("line %d: empty param type for kvget", counter)
+		}
+		vm.AddInstruction(NewInstructionKvGet(counter, key))
+	case INST_KVSET:
+		if len(inst) < 2 {
+			break
+		}
+		params, err := ParseParameters(inst[1])
+		if err != nil {
+			return fmt.Errorf("line %d: %w", counter, err)
+		}
+		if len(params) > 1 {
+			return fmt.Errorf("line %d: kvset expects only one string param for key", counter)
+		}
+		if params[0].Type != DT_STRING {
+			return fmt.Errorf("line %d: invalid param type for kvset", counter)
+		}
+		key := params[0].GetString()
+		if key == "" {
+			return fmt.Errorf("line %d: empty param type for kvset", counter)
+		}
+		vm.AddInstruction(NewInstructionKvSet(counter, key))
+	case INST_KVDELETE:
+		if len(inst) < 2 {
+			break
+		}
+		params, err := ParseParameters(inst[1])
+		if err != nil {
+			return fmt.Errorf("line %d: %w", counter, err)
+		}
+		if len(params) > 1 {
+			return fmt.Errorf("line %d: kvdelete expects only one string param for key", counter)
+		}
+		if params[0].Type != DT_STRING {
+			return fmt.Errorf("line %d: invalid param type for kvdelete", counter)
+		}
+		key := params[0].GetString()
+		if key == "" {
+			return fmt.Errorf("line %d: empty param type for kvdelete", counter)
+		}
+		vm.AddInstruction(NewInstructionKvGet(counter, key))
 	}
 
 	return nil
@@ -228,4 +345,21 @@ func (vm *StackVm) getIcForLabel(label string) (int, error) {
 		}
 	}
 	return math.MaxInt, fmt.Errorf("could not find label: %s", label)
+}
+
+func (vm *StackVm) loadKv(filePath string) error {
+	bytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	vm.kv_filepath = filePath
+	return json.Unmarshal(bytes, &(vm.kv))
+}
+
+func (vm *StackVm) saveKv(filePath string) error {
+	bytes, err := json.Marshal(vm.kv)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filePath, bytes, 0755)
 }
