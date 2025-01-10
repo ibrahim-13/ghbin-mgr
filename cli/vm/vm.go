@@ -156,23 +156,20 @@ func (vm *StackVm) Exec() error {
 		case INST_KVGET:
 			key := inst.KvGet()
 			val := vm.kv[key]
-			if val != "" {
-				return fmt.Errorf("line %d : value for the given key is empty", inst.LineNumber, err)
+			if val == "" {
+				return fmt.Errorf("line %d : value for the given key is empty", inst.LineNumber)
 			}
 			vm.Stack.Push(NewData(DT_STRING, val))
 		case INST_KVSET:
 			key := inst.KvSet()
-			val := vm.kv[key]
-			if val != "" {
-				return fmt.Errorf("line %d : value for the given key is empty", inst.LineNumber, err)
+			val, err := vm.Stack.Peak(0)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 			}
-			vm.Stack.Push(NewData(DT_STRING, val))
+			vm.kv[key] = val.GetString()
+			vm.Stack.Push(val)
 		case INST_KVDELETE:
-			key := inst.KvGet()
-			val := vm.kv[key]
-			if val != "" {
-				return fmt.Errorf("line %d : value for the given key is empty", inst.LineNumber, err)
-			}
+			key := inst.KvDelete()
 			delete(vm.kv, key)
 		}
 		if incrementIc {
@@ -272,8 +269,8 @@ func (vm *StackVm) processLine(line string, counter int) error {
 		}
 		vm.AddInstruction(NewInstructionKvLoad(counter, vm.kv_filepath))
 	case INST_KVSAVE:
-		if len(inst) != 2 {
-			return fmt.Errorf("line %d: only one parameter is permitted", counter)
+		if len(inst) != 1 {
+			return fmt.Errorf("line %d: no parameter is permitted", counter)
 		}
 		vm.AddInstruction(NewInstructionKvSave(counter))
 	case INST_KVGET:
@@ -332,7 +329,7 @@ func (vm *StackVm) processLine(line string, counter int) error {
 		if key == "" {
 			return fmt.Errorf("line %d: empty param type for kvdelete", counter)
 		}
-		vm.AddInstruction(NewInstructionKvGet(counter, key))
+		vm.AddInstruction(NewInstructionKvDelete(counter, key))
 	}
 
 	return nil
@@ -348,11 +345,15 @@ func (vm *StackVm) getIcForLabel(label string) (int, error) {
 }
 
 func (vm *StackVm) loadKv(filePath string) error {
+	vm.kv_filepath = filePath
 	bytes, err := os.ReadFile(filePath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			vm.kv = make(map[string]string)
+			return nil
+		}
 		return err
 	}
-	vm.kv_filepath = filePath
 	return json.Unmarshal(bytes, &(vm.kv))
 }
 
