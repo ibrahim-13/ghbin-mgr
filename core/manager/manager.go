@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"errors"
+	"gbm/util"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,10 +15,17 @@ const (
 	ArchiveZip  ArchiveType = "zip"
 )
 
-func DownloadAndExtract(downloadUrl, location string, aType ArchiveType, pattern ...string) error {
+func DownloadAndExtract(assetName, downloadUrl, location string, pattern ...string) error {
+	var aType ArchiveType
+	if util.ContainsAnyMatches(assetName, ".tar.gz") {
+		aType = ArchiveGzip
+	} else if util.ContainsAnyMatches(assetName, ".zip") {
+		aType = ArchiveZip
+	} else {
+		return errors.New("could not detect archive type")
+	}
 	parent := filepath.Dir(location)
-	basename := filepath.Base(location)
-	archivefile := filepath.Join(parent, basename)
+	archivefile := filepath.Join(parent, assetName)
 	err := downloadFile(downloadUrl, archivefile, http.DefaultClient)
 	if err != nil {
 		return err

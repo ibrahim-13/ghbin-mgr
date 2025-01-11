@@ -3,21 +3,23 @@ package stackmachine
 type InstructionType string
 
 const (
-	INST_PUSH     InstructionType = "push"
-	INST_POP      InstructionType = "pop"
-	INST_LABEL    InstructionType = "label"
-	INST_GOTO     InstructionType = "goto"
-	INST_RETURN   InstructionType = "return"
-	INST_PRINT    InstructionType = "print"
-	INST_EXIT     InstructionType = "exit"
-	INST_JUMPEQ   InstructionType = "jumpeq"
-	INST_JUMPEQN  InstructionType = "jumpeqn"
-	INST_KVLOAD   InstructionType = "kvload"
-	INST_KVSAVE   InstructionType = "kvsave"
-	INST_KVGET    InstructionType = "kvget"
-	INST_KVSET    InstructionType = "kvset"
-	INST_KVDELETE InstructionType = "kvdelete"
-	INST_GHCHECK  InstructionType = "ghcheck"
+	INST_PUSH       InstructionType = "push"
+	INST_POP        InstructionType = "pop"
+	INST_LABEL      InstructionType = "label"
+	INST_GOTO       InstructionType = "goto"
+	INST_RETURN     InstructionType = "return"
+	INST_PRINT      InstructionType = "print"
+	INST_EXIT       InstructionType = "exit"
+	INST_JUMPEQ     InstructionType = "jumpeq"
+	INST_JUMPEQN    InstructionType = "jumpeqn"
+	INST_KVLOAD     InstructionType = "kvload"
+	INST_KVSAVE     InstructionType = "kvsave"
+	INST_KVGET      InstructionType = "kvget"
+	INST_KVSET      InstructionType = "kvset"
+	INST_KVDELETE   InstructionType = "kvdelete"
+	INST_GHCHECK    InstructionType = "ghcheck"
+	INST_GHINSTALL  InstructionType = "ghinstall"
+	INST_GHINSTALLX InstructionType = "ghinstallx"
 )
 
 type Instruction struct {
@@ -212,10 +214,23 @@ func NewInstructionKvDelete(lineNo int, key string) Instruction {
 	}
 }
 
-func NewInstructionGhCheck(lineNo int, key string) Instruction {
+func NewInstructionGhCheck(lineNo int) Instruction {
 	return Instruction{
 		Type:       INST_GHCHECK,
 		LineNumber: lineNo,
-		Data:       key,
+	}
+}
+
+func NewInstructionGhInstall(lineNo int) Instruction {
+	return Instruction{
+		Type:       INST_GHINSTALL,
+		LineNumber: lineNo,
+	}
+}
+
+func NewInstructionGhInstallX(lineNo int) Instruction {
+	return Instruction{
+		Type:       INST_GHINSTALLX,
+		LineNumber: lineNo,
 	}
 }

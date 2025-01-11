@@ -2,6 +2,7 @@ package stackmachine
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 )
 
@@ -30,6 +31,10 @@ func ParseParameters(param string) ([]Data, error) {
 			}
 			strWithQuote := strings.Join(str, " ")
 			params = append(params, NewData(DT_STRING, strWithQuote[1:len(strWithQuote)-1]))
+		} else if vi, err := strconv.Atoi(parts[i]); err != nil {
+			params = append(params, NewData(DT_INT, vi))
+		} else if vf, err := strconv.ParseFloat(parts[i], 64); err != nil {
+			params = append(params, NewData(DT_FLOAT, vf))
 		} else {
 			params = append(params, NewData(DT_STRING, parts[i]))
 		}

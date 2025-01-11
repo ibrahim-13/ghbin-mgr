@@ -30,16 +30,11 @@ func InstallExtract() {
 	if err != nil {
 		panic(err)
 	}
-	var archiveType manager.ArchiveType
-	if util.ContainsAnyMatches(info.AssetName, ".tar.gz") {
-		archiveType = manager.ArchiveGzip
-	} else if util.ContainsAnyMatches(info.AssetName, ".zip") {
-		archiveType = manager.ArchiveZip
-	} else {
-		panic("could not detect archive type")
-	}
-	manager.DownloadAndExtract(info.AssetDownloadLink,
+	err = manager.DownloadAndExtract(info.AssetName,
+		info.AssetDownloadLink,
 		filepath.Join(installDir, binName),
-		archiveType,
 		util.ParsePatternsFromString(patternx)...)
+	if err != nil {
+		panic(err)
+	}
 }

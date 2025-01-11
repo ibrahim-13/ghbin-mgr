@@ -4,8 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"gbm/core/manager"
+	"gbm/core/release"
+	"gbm/util"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -15,6 +19,7 @@ type StackMachine struct {
 	instructions []Instruction
 	kv           map[string]string
 	kv_filepath  string
+	_gh_release  release.GhRelease
 }
 
 func NewStackMachine() *StackMachine {
@@ -170,10 +175,127 @@ func (vm *StackMachine) Exec() error {
 				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 			}
 			vm.kv[key] = val.GetString()
-			vm.Stack.Push(val)
 		case INST_KVDELETE:
 			key := inst.KvDelete()
 			delete(vm.kv, key)
+		case INST_GHCHECK:
+			repo, err := vm.Stack.Peak(0)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if repo.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for repo is not string", inst.LineNumber)
+			}
+			user, err := vm.Stack.Peak(1)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if user.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for user is not string", inst.LineNumber)
+			}
+			tag, err := vm.Stack.Peak(2)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if tag.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for tag is not string", inst.LineNumber)
+			}
+			resp, err := vm.gh_release().GetReleaseResponse(user.GetString(), repo.GetString())
+			if err != nil {
+				return err
+			}
+			if resp.TagName == tag.GetString() {
+				vm.Stack.Push(NewData(DT_STRING, "false"))
+			} else {
+				vm.Stack.Push(NewData(DT_STRING, "true"))
+			}
+		case INST_GHINSTALLX:
+			repo, err := vm.Stack.Peak(0)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if repo.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for repo is not string", inst.LineNumber)
+			}
+			user, err := vm.Stack.Peak(1)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if user.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for user is not string", inst.LineNumber)
+			}
+			binName, err := vm.Stack.Peak(2)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if binName.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for tag is not string", inst.LineNumber)
+			}
+			patternFile, err := vm.Stack.Peak(3)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if patternFile.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for tag is not string", inst.LineNumber)
+			}
+			patternExtract, err := vm.Stack.Peak(4)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if patternExtract.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for tag is not string", inst.LineNumber)
+			}
+			installLoc, err := vm.Stack.Peak(5)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if installLoc.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for tag is not string", inst.LineNumber)
+			}
+			resp, err := vm.gh_release().GetRelease(user.GetString(), repo.GetString(), util.ParsePatternsFromString(patternFile.GetString())...)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+
+			err = manager.DownloadAndExtract(resp.AssetName,
+				resp.AssetDownloadLink,
+				filepath.Join(installLoc.GetString(), binName.GetString()),
+				util.ParsePatternsFromString(patternExtract.GetString())...)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+		case INST_GHINSTALL:
+			repo, err := vm.Stack.Peak(0)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if repo.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for repo is not string", inst.LineNumber)
+			}
+			user, err := vm.Stack.Peak(1)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if user.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for user is not string", inst.LineNumber)
+			}
+			binName, err := vm.Stack.Peak(2)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if binName.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for tag is not string", inst.LineNumber)
+			}
+			patternFile, err := vm.Stack.Peak(3)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if patternFile.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for tag is not string", inst.LineNumber)
+			}
+			installLoc, err := vm.Stack.Peak(5)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			} else if installLoc.Type != DT_STRING {
+				return fmt.Errorf("line %d: ghcheck: poped stack value for tag is not string", inst.LineNumber)
+			}
+			resp, err := vm.gh_release().GetRelease(user.GetString(), repo.GetString(), util.ParsePatternsFromString(patternFile.GetString())...)
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
+
+			err = manager.Download(resp.AssetDownloadLink,
+				filepath.Join(installLoc.GetString(), binName.GetString()))
+			if err != nil {
+				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
+			}
 		}
 		if incrementIc {
 			ic += 1
@@ -185,6 +307,8 @@ func (vm *StackMachine) Exec() error {
 func (vm *StackMachine) processLine(line string, counter int) error {
 	if strings.HasPrefix(line, ":") && strings.HasSuffix(line, ":") {
 		vm.AddInstruction(NewInstructionLabel(counter, line))
+		return nil
+	} else if strings.HasPrefix(line, "##") {
 		return nil
 	}
 
@@ -334,6 +458,20 @@ func (vm *StackMachine) processLine(line string, counter int) error {
 		}
 		vm.AddInstruction(NewInstructionKvDelete(counter, key))
 	case INST_GHCHECK:
+		if len(inst) > 1 {
+			return fmt.Errorf("line %d: ghcheck does not have any param", counter)
+		}
+		vm.AddInstruction(NewInstructionGhCheck(counter))
+	case INST_GHINSTALL:
+		if len(inst) > 1 {
+			return fmt.Errorf("line %d: ghinstall does not have any param", counter)
+		}
+		vm.AddInstruction(NewInstructionGhInstall(counter))
+	case INST_GHINSTALLX:
+		if len(inst) > 1 {
+			return fmt.Errorf("line %d: ghinstallx does not have any param", counter)
+		}
+		vm.AddInstruction(NewInstructionGhInstallX(counter))
 	}
 
 	return nil
@@ -367,4 +505,11 @@ func (vm *StackMachine) saveKv(filePath string) error {
 		return err
 	}
 	return os.WriteFile(filePath, bytes, 0755)
+}
+
+func (vm *StackMachine) gh_release() release.GhRelease {
+	if vm._gh_release == nil {
+		vm._gh_release = release.NewRelease()
+	}
+	return vm._gh_release
 }

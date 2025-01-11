@@ -28,5 +28,8 @@ func Install() {
 	if err != nil {
 		panic(err)
 	}
-	manager.Download(info.AssetDownloadLink, filepath.Join(installDir, binName))
+	err = manager.Download(info.AssetDownloadLink, filepath.Join(installDir, binName))
+	if err != nil {
+		panic(err)
+	}
 }
