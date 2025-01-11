@@ -1,4 +1,4 @@
-package vm
+package stackmachine
 
 import (
 	"bufio"
@@ -10,25 +10,25 @@ import (
 	"strings"
 )
 
-type StackVm struct {
+type StackMachine struct {
 	Stack        *Stack
 	instructions []Instruction
 	kv           map[string]string
 	kv_filepath  string
 }
 
-func NewStackVm() *StackVm {
-	return &StackVm{
+func NewStackMachine() *StackMachine {
+	return &StackMachine{
 		Stack: NewStack(),
 		kv:    make(map[string]string),
 	}
 }
 
-func (vm *StackVm) AddInstruction(inst Instruction) {
+func (vm *StackMachine) AddInstruction(inst Instruction) {
 	vm.instructions = append(vm.instructions, inst)
 }
 
-func (vm *StackVm) Load(instructionFilePath string) error {
+func (vm *StackMachine) Load(instructionFilePath string) error {
 	file, err := os.Open(instructionFilePath)
 	if err != nil {
 		return err
@@ -41,7 +41,10 @@ func (vm *StackVm) Load(instructionFilePath string) error {
 	counter := 1
 	for scanner.Scan() {
 		line := scanner.Text()
-		vm.processLine(line, counter)
+		err := vm.processLine(line, counter)
+		if err != nil {
+			return err
+		}
 		counter += 1
 	}
 
@@ -52,7 +55,7 @@ func (vm *StackVm) Load(instructionFilePath string) error {
 	return nil
 }
 
-func (vm *StackVm) Exec() error {
+func (vm *StackMachine) Exec() error {
 	ic := 0
 	for ic < len(vm.instructions) {
 		inst, incrementIc := vm.instructions[ic], true
@@ -179,7 +182,7 @@ func (vm *StackVm) Exec() error {
 	return nil
 }
 
-func (vm *StackVm) processLine(line string, counter int) error {
+func (vm *StackMachine) processLine(line string, counter int) error {
 	if strings.HasPrefix(line, ":") && strings.HasSuffix(line, ":") {
 		vm.AddInstruction(NewInstructionLabel(counter, line))
 		return nil
@@ -194,7 +197,7 @@ func (vm *StackVm) processLine(line string, counter int) error {
 	switch InstructionType(inst_cmd) {
 	case INST_PUSH:
 		if len(inst) < 2 {
-			break
+			return fmt.Errorf("line %d: at least one value is required", counter)
 		}
 		params, err := ParseParameters(inst[1])
 		if err != nil {
@@ -251,7 +254,7 @@ func (vm *StackVm) processLine(line string, counter int) error {
 		vm.AddInstruction(NewInstructionJumpEqN(counter, inst[1]))
 	case INST_KVLOAD:
 		if len(inst) < 2 {
-			break
+			return fmt.Errorf("line %d: storage file location is required", counter)
 		}
 		params, err := ParseParameters(inst[1])
 		if err != nil {
@@ -275,7 +278,7 @@ func (vm *StackVm) processLine(line string, counter int) error {
 		vm.AddInstruction(NewInstructionKvSave(counter))
 	case INST_KVGET:
 		if len(inst) < 2 {
-			break
+			return fmt.Errorf("line %d: key name is required", counter)
 		}
 		params, err := ParseParameters(inst[1])
 		if err != nil {
@@ -294,7 +297,7 @@ func (vm *StackVm) processLine(line string, counter int) error {
 		vm.AddInstruction(NewInstructionKvGet(counter, key))
 	case INST_KVSET:
 		if len(inst) < 2 {
-			break
+			return fmt.Errorf("line %d: key name is required", counter)
 		}
 		params, err := ParseParameters(inst[1])
 		if err != nil {
@@ -313,7 +316,7 @@ func (vm *StackVm) processLine(line string, counter int) error {
 		vm.AddInstruction(NewInstructionKvSet(counter, key))
 	case INST_KVDELETE:
 		if len(inst) < 2 {
-			break
+			return fmt.Errorf("line %d: key name is required", counter)
 		}
 		params, err := ParseParameters(inst[1])
 		if err != nil {
@@ -330,12 +333,13 @@ func (vm *StackVm) processLine(line string, counter int) error {
 			return fmt.Errorf("line %d: empty param type for kvdelete", counter)
 		}
 		vm.AddInstruction(NewInstructionKvDelete(counter, key))
+	case INST_GHCHECK:
 	}
 
 	return nil
 }
 
-func (vm *StackVm) getIcForLabel(label string) (int, error) {
+func (vm *StackMachine) getIcForLabel(label string) (int, error) {
 	for i, v := range vm.instructions {
 		if v.Type == INST_LABEL && v.LabelName() == label {
 			return i, nil
@@ -344,7 +348,7 @@ func (vm *StackVm) getIcForLabel(label string) (int, error) {
 	return math.MaxInt, fmt.Errorf("could not find label: %s", label)
 }
 
-func (vm *StackVm) loadKv(filePath string) error {
+func (vm *StackMachine) loadKv(filePath string) error {
 	vm.kv_filepath = filePath
 	bytes, err := os.ReadFile(filePath)
 	if err != nil {
@@ -357,7 +361,7 @@ func (vm *StackVm) loadKv(filePath string) error {
 	return json.Unmarshal(bytes, &(vm.kv))
 }
 
-func (vm *StackVm) saveKv(filePath string) error {
+func (vm *StackMachine) saveKv(filePath string) error {
 	bytes, err := json.Marshal(vm.kv)
 	if err != nil {
 		return err

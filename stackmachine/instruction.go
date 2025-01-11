@@ -1,4 +1,4 @@
-package vm
+package stackmachine
 
 type InstructionType string
 
@@ -17,6 +17,7 @@ const (
 	INST_KVGET    InstructionType = "kvget"
 	INST_KVSET    InstructionType = "kvset"
 	INST_KVDELETE InstructionType = "kvdelete"
+	INST_GHCHECK  InstructionType = "ghcheck"
 )
 
 type Instruction struct {
@@ -206,6 +207,14 @@ func NewInstructionKvSet(lineNo int, key string) Instruction {
 func NewInstructionKvDelete(lineNo int, key string) Instruction {
 	return Instruction{
 		Type:       INST_KVDELETE,
+		LineNumber: lineNo,
+		Data:       key,
+	}
+}
+
+func NewInstructionGhCheck(lineNo int, key string) Instruction {
+	return Instruction{
+		Type:       INST_GHCHECK,
 		LineNumber: lineNo,
 		Data:       key,
 	}

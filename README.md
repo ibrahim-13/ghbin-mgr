@@ -109,3 +109,51 @@ jumpeq :do_this:
 ```
 jumpeqn :do_this:
 ```
+
+### kvload
+
+- Loads a file as key-value storage
+- Requires only one parameter
+- Parameter must be a location for storage file
+- Of file does not exist at the location, a new file will be created
+- Throws error if the file is not a valid json file
+
+```
+kvload "/location/of/a/file.json"
+```
+
+### kvsave
+
+- Saves the key-value storage
+- No paramerters required
+
+```
+kvsave
+```
+
+### kvget
+
+- Gets value of a key from storage and pushes it into the stack
+- Requires key as parameter
+
+```
+kvget "some_key"
+```
+
+### kvset
+
+- Sets value of a key from storage with the last value from the stack
+- Requires key as parameter
+
+```
+kvset "some_key"
+```
+
+### kvdelete
+
+- Deletes the value of a key from storage
+- Requires key as parameter
+
+```
+kvdelete "some_key"
+```

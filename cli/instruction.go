@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"gbm/cli/vm"
+	"gbm/stackmachine"
 	"gbm/util"
 )
 
@@ -13,13 +13,13 @@ func InstructionSet() {
 
 	flags.ValidateStringNotEmpty(instructionFilePath, "instruction file not provided")
 
-	vm := vm.NewStackVm()
+	machine := stackmachine.NewStackMachine()
 
-	if err := vm.Load(instructionFilePath); err != nil {
+	if err := machine.Load(instructionFilePath); err != nil {
 		panic(err)
 	}
 
-	if err := vm.Exec(); err != nil {
+	if err := machine.Exec(); err != nil {
 		panic(err)
 	}
 }
