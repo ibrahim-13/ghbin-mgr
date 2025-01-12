@@ -164,9 +164,6 @@ func (vm *StackMachine) Exec() error {
 		case INST_KVGET:
 			key := inst.KvGet()
 			val := vm.kv[key]
-			if val == "" {
-				return fmt.Errorf("line %d : value for the given key is empty", inst.LineNumber)
-			}
 			vm.Stack.Push(NewData(DT_STRING, val))
 		case INST_KVSET:
 			key := inst.KvSet()
@@ -255,6 +252,7 @@ func (vm *StackMachine) Exec() error {
 			if err != nil {
 				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 			}
+			vm.Stack.Push(NewData(DT_STRING, resp.TagName))
 		case INST_GHINSTALL:
 			repo, err := vm.Stack.Peak(0)
 			if err != nil {
@@ -296,6 +294,7 @@ func (vm *StackMachine) Exec() error {
 			if err != nil {
 				return fmt.Errorf("line %d : %w", inst.LineNumber, err)
 			}
+			vm.Stack.Push(NewData(DT_STRING, resp.TagName))
 		}
 		if incrementIc {
 			ic += 1

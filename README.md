@@ -1,20 +1,87 @@
 # Github Binary Manager
 
-Manage installation, update and removal of binaries from Github releases.
+Install and update binaries from Github releases.
 
-## To-do
- - [X] Core
-   - [X] get release info from Github API
-   - [X] get release info from Github CLI
-   - [X] check update
-   - [X] download binary to path
-   - [X] download archive and extract
- - [ ] CLI
-   - [X] check update
-   - [X] download binary to path
-   - [X] download archive and extract
-   - [ ] instruction set
- - [ ] Checksum validation
+## Command Line
+
+### Top-level Commands
+
+| command | description |
+|---|---|
+| info | get release information |
+| check | check for update |
+| install | install binary from latest release |
+| installx | install binary from latest release archive |
+| code | run instruction set for multiple operation |
+
+### Command Usage
+
+- `info`
+
+```
+Usage of ghbin-mgr info:
+  -json
+        print output to json
+  -p string
+        pattern to filter asset (comma separated, case-insensitive)
+  -r string
+        github repository name
+  -u string
+        github user name
+```
+
+- `check`
+
+```
+Usage of ghbin-mgr info:
+  -r string
+        github repository name
+  -t string
+        release tag to compare with
+  -u string
+        github user name
+```
+
+- `install`
+
+```
+Usage of ghbin-mgr install:
+  -d string
+        installation directory
+  -n string
+        binary
+  -p string
+        pattern to filter asset (comma separated, case-insensitive)
+  -r string
+        github repository name
+  -u string
+        github user name
+```
+
+- `installx`
+
+```
+Usage of ghbin-mgr install:
+  -d string
+        installation directory
+  -n string
+        binary
+  -p string
+        pattern to filter asset (comma separated, case-insensitive)
+  -px string
+        pattern to filter binary file in archive (comma separated, case-insensitive)
+  -r string
+        github repository name
+  -u string
+        github user name
+```
+
+- `code`
+
+```Usage of ghbin-mgr code:
+  -f string
+        instruction file path
+```
 
 ## Instructions
 
@@ -157,3 +224,90 @@ kvset "some_key"
 ```
 kvdelete "some_key"
 ```
+
+### ghcheck
+
+- Check for latest updated release for a github repository
+- Necessary params are picked from stack
+- Params should match the following position in stack-
+  - [2] tag
+  - [1] github username
+  - [0] repository name
+
+```
+# add paramas one-by-one
+push "tag"
+push "user"
+push "repo"
+ghckeck
+
+# add paramas single instruction, values pushed from left-to-right
+push "repo" "user" "tag"
+ghckeck
+```
+
+### ghinstallx
+
+- Download an archive file from github release and extract binary
+- Necessary params are picked from stack
+- Params should match the following position in stack-
+  - [5] installation directory
+  - [4] pattern to find binary in the archive
+  - [3] pattern to find archive in release assets
+  - [2] binary name
+  - [1] github username
+  - [0] repository name
+
+```
+# add paramas one-by-one
+push "install_dir"
+push "binary_in_archive_pattern"
+push "asset_archive_pattern"
+push "binary_name"
+push "user"
+push "repo"
+ghinstallx
+
+# add paramas single instruction, values pushed from left-to-right
+push "repo" "user" "binary_name" "asset_archive_pattern" "binary_in_archive_pattern" "install_dir"
+ghinstallx
+```
+
+### ghinstall
+
+- Download a binary from github release
+- Necessary params are picked from stack
+- Params should match the following position in stack-
+  - [4] installation directory
+  - [3] pattern to find binary in release assets
+  - [2] binary name
+  - [1] github username
+  - [0] repository name
+
+```
+# add paramas one-by-one
+push "install_dir"
+push "binary_file_pattern"
+push "binary_name"
+push "user"
+push "repo"
+ghinstall
+
+# add paramas single instruction, values pushed from left-to-right
+push "repo" "user" "binary_name" "binary_file_pattern" "install_dir"
+ghinstall
+```
+
+## To-do
+ - [X] Core
+   - [X] get release info from Github API
+   - [X] get release info from Github CLI
+   - [X] check update
+   - [X] download binary to path
+   - [X] download archive and extract
+ - [X] CLI
+   - [X] check update
+   - [X] download binary to path
+   - [X] download archive and extract
+   - [X] instruction set
+ - [ ] Checksum validation
