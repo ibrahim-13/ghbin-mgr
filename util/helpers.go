@@ -9,6 +9,12 @@ func ContainsAllMatches(str string, match ...string) bool {
 	s := strings.ToLower(str)
 	matchCount := 0
 	for i := range match {
+		if strings.HasPrefix(match[i], "^") {
+			if strings.Contains(s, strings.ToLower(match[i][1:])) {
+				matchCount += 1
+			}
+			continue
+		}
 		if strings.Contains(s, strings.ToLower(match[i])) {
 			matchCount += 1
 		}

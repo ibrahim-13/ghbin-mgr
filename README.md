@@ -83,7 +83,19 @@ Usage of ghbin-mgr install:
         instruction file path
 ```
 
+### Patterns
+
+- Patterns can be sub-string
+- Multiple patterns can be added separated by comma (,)
+- Special templates: these templates can be added as a pattern, which would be replaced by their corresponding values
+  - `__os__` replaced with operating system name (windows, darwin, linux)
+  - `__arch__` replace with architecture (x86_64, darwin, linux etc.)
+- Exclusions can be added by adding `^` at the starting of a pattern (does not work with templates)
+
 ## Instructions
+
+- Empty lines are permitted
+- Lines starting with `##` are considered as comments
 
 ### push
 
